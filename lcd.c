@@ -99,6 +99,8 @@ static struct_configuration_variables configuration_variables;
 
 static uint16_t ui16_battery_soc_watts_hour;
 
+static uint8_t ui8_walk_assist_debounce_timer = 0;
+
 void low_pass_filter_battery_voltage_current_power (void);
 void lcd_enable_motor_symbol (uint8_t ui8_state);
 void lcd_enable_lights_symbol (uint8_t ui8_state);
@@ -1243,15 +1245,21 @@ void walk_assist_state (void)
     // user need to keep pressing the button to have walk assist
     if (get_button_down_state ())
     {
+      ui8_walk_assist_debounce_timer = 0;
+
       motor_controller_data.ui8_walk_assist_level = 1;
       lcd_enable_walk_symbol (1);
-      // Commented on 2018.08.30 as this is creating issues to users because they don't how this offroad mode works.
-      //if (configuration_variables.ui8_odometer_field_state == 1 ) { configuration_variables.ui8_wheel_max_speed = 99; } //Offroad-Mode enabled!
+    }
+    else if (ui8_walk_assist_debounce_timer >= 50)
+    {
+      ui8_walk_assist_debounce_timer = 0;
+
+      motor_controller_data.ui8_walk_assist_level = 0;
+      clear_button_down_long_click_event ();
     }
     else
     {
-      motor_controller_data.ui8_walk_assist_level = 0;
-      clear_button_down_long_click_event ();
+      ui8_walk_assist_debounce_timer++;
     }
   }
 }
@@ -1274,8 +1282,6 @@ void odometer (void)
   {
     clear_button_onoff_click_event ();
     odometer_increase_field_state ();
-    // Commented on 2018.08.30 as this is creating issues to users because they don't how this offroad mode works.
-    //configuration_variables.ui8_wheel_max_speed = 25; // Offroad-Mode disabled
   }
 
   switch (configuration_variables.ui8_odometer_field_state)
