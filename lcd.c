@@ -1260,6 +1260,7 @@ void walk_assist_state (void)
     else
     {
       ui8_walk_assist_debounce_timer++;
+      lcd_enable_walk_symbol (1);
     }
   }
 }
